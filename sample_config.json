@@ -1,0 +1,23 @@
+{
+  "services": {
+    "github_public": {
+      "base_url": "https://api.github.com",
+      "requires_service_token": false
+    },
+    "github_public_behind_service_token": {
+      "base_url": "https://api.github.com",
+      "requires_service_token": true
+    },
+    "github_private_behind_service_token": {
+      "base_url": "https://api.github.com",
+      "credential": {
+        "type": "bearer",
+        "token": "YOUR_GITHUB_API_TOKEN"
+      },
+      "requires_service_token": true,
+      "valid_audiences": [
+        "zapier_webhook"
+      ]
+    }
+  }
+}

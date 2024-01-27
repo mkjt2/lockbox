@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "lockbox"
+version = "0.1.0"
+description = ""
+authors = ["Jackie Tung <jackie.tung@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10"
+flask = "^3.0.1"
+types-flask = "^1.1.6"
+requests = "^2.31.0"
+gunicorn = "^21.2.0"
+pydantic = "^2.5.3"
+pyjwt = "^2.8.0"
+
+
+[tool.poetry.group.dev.dependencies]
+pyright = "^1.1.348"
+pre-commit = "^3.6.0"
+pytest = "^8.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pyright]
+# TODO not portable
+venvPath = "."
+venv = "venv"
