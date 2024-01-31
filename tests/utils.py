@@ -84,14 +84,12 @@ class LocalBlackholeServer(LocalGunicornServer):
         self._stop_gunicorn()
 
 
-class LocalLockboxServer(LocalGunicornServer):
-    def __init__(
-        self, lockbox_config: Config, lockbox_signing_key: str | None, port: int = 8000
-    ):
+class LocalLockboxProxyServer(LocalGunicornServer):
+    def __init__(self, config: Config, signing_key: str | None, port: int = 8000):
         super().__init__(port)
-        self._lockbox_config: Config = lockbox_config
+        self._lockbox_config: Config = config
         self._lockbox_config_file: str | None = None
-        self._lockbox_signing_key: str | None = lockbox_signing_key
+        self._lockbox_signing_key: str | None = signing_key
         self._lockbox_signing_key_file: str | None = None
 
     def start(self) -> None:

@@ -2,6 +2,8 @@ import argparse
 import jwt
 import time
 
+from lockbox import JWT_ISSUER_LOCKBOX
+
 
 def main() -> None:
     parser = argparse.ArgumentParser()
@@ -26,7 +28,7 @@ def generate_service_token(
 ) -> str:
     return jwt.encode(
         {
-            "iss": "lockbox",
+            "iss": JWT_ISSUER_LOCKBOX,
             "exp": int(time.time() + duration),
             "service_name": service_name,
             "aud": audience,

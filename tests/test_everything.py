@@ -2,11 +2,11 @@ import unittest
 
 from lockbox.config import Config, Service
 from lockbox.generate_service_token import generate_service_token
-from tests.utils import LocalLockboxServer, LocalBlackholeServer
+from tests.utils import LocalLockboxProxyServer, LocalBlackholeServer
 
-LOCKBOX_SIGNING_KEY_FOR_TEST = "abc"
+LOCKBOX_PROXY_SIGNING_KEY_FOR_TEST = "abc"
 BLACKHOLE_SERVER_PORT = 8001
-LOCKBOX_SERVER_PORT = 8000
+LOCKBOX_PROXY_SERVER_PORT = 8000
 
 
 class TestEverything(unittest.TestCase):
@@ -19,17 +19,11 @@ class TestEverything(unittest.TestCase):
     def tearDown(self):
         self.blackhole_server.stop()
 
-    def get_lockbox_server(
-        self, lockbox_config: Config, lockbox_signing_key: str | None
-    ):
-        return LocalLockboxServer(
-            lockbox_config=lockbox_config, lockbox_signing_key=lockbox_signing_key
-        )
+    def get_lockbox_proxy_server(self, config: Config, signing_key: str | None):
+        return LocalLockboxProxyServer(config=config, signing_key=signing_key)
 
-    def test_local_lockbox_server(self):
-        with LocalLockboxServer(
-            lockbox_config=Config(services={}), lockbox_signing_key=None
-        ):
+    def test_local_lockbox_proxy_server(self):
+        with LocalLockboxProxyServer(config=Config(services={}), signing_key=None):
             pass
 
     def test_local_blackhole_server(self):
@@ -51,7 +45,7 @@ class TestEverything(unittest.TestCase):
         service_token = generate_service_token(
             service_name="blackhole",
             duration=600,
-            signing_key=LOCKBOX_SIGNING_KEY_FOR_TEST,
+            signing_key=LOCKBOX_PROXY_SIGNING_KEY_FOR_TEST,
             audience="test_everything",
         )
         test_cases = [
@@ -95,9 +89,9 @@ class TestEverything(unittest.TestCase):
 
         headers = {"Authorization": f"Bearer {service_token}"}
 
-        with self.get_lockbox_server(
-            lockbox_config, LOCKBOX_SIGNING_KEY_FOR_TEST
-        ) as lockbox_server:
+        with self.get_lockbox_proxy_server(
+            lockbox_config, LOCKBOX_PROXY_SIGNING_KEY_FOR_TEST
+        ) as lockbox_proxy_server:
             for test_case in test_cases:
 
                 service_path = test_case["service_path"]
@@ -106,7 +100,7 @@ class TestEverything(unittest.TestCase):
                 data = test_case["data"]
 
                 try:
-                    lockbox_request_fn = getattr(lockbox_server, method.lower())
+                    lockbox_request_fn = getattr(lockbox_proxy_server, method.lower())
                     blackhole_request_fn = getattr(
                         self.blackhole_server, method.lower()
                     )

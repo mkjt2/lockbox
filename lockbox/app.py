@@ -7,6 +7,7 @@ from flask import Flask, request, make_response
 import requests
 from requests.auth import HTTPBasicAuth
 
+from lockbox import JWT_ISSUER_LOCKBOX
 from lockbox.config import (
     load_config,
     BasicAuthCredential,
@@ -30,7 +31,7 @@ def validate_service_token(
             algorithms=["HS256"],
             options={"verify_signature": False},
         )
-        if service_token_payload["iss"] != "lockbox":
+        if service_token_payload["iss"] != JWT_ISSUER_LOCKBOX:
             return "Invalid service_name token (bad issuer)", 401
         if service_token_payload["exp"] < time.time():
             return "Invalid service_name token (expired)", 401

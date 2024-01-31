@@ -1,9 +1,15 @@
 [tool.poetry]
-name = "lockbox"
-version = "0.1.0"
-description = ""
+name = "lockbox-proxy"
+packages = [
+    { include = "lockbox" }
+]
+version = "0.1.2"
+description = "Lockbox is a forward proxy for making third party API calls."
 authors = ["Jackie Tung <jackie.tung@gmail.com>"]
 readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/mkjt2/lockbox"
+repository = "https://github.com/mkjt2/lockbox"
 
 [tool.poetry.dependencies]
 python = ">=3.10"
