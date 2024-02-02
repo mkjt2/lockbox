@@ -19,5 +19,9 @@
         "zapier_webhook"
       ]
     }
+  },
+  "audit_log": {
+    "type": "local_dir",
+    "root_dir": "/var/tmp/lockbox_audit_log"
   }
 }

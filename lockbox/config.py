@@ -1,44 +1,55 @@
 import enum
 import json
+from typing import Literal
 
 from pydantic import BaseModel
 
 
-class CredentialType(enum.Enum):
+class CredentialType(str, enum.Enum):
     BASIC = "basic"
     BEARER = "bearer"
     HEADERS = "headers"
 
 
-class BasicAuthCredential(BaseModel):
-    type: CredentialType = CredentialType.BASIC
+class BasicAuthCredentialConfig(BaseModel):
+    type: Literal[CredentialType.BASIC] = CredentialType.BASIC
     username: str
     password: str
 
 
-class BearerTokenCredential(BaseModel):
-    type: CredentialType = CredentialType.BEARER
+class BearerTokenCredentialConfig(BaseModel):
+    type: Literal[CredentialType.BEARER] = CredentialType.BEARER
     token: str
 
 
-class HeadersCredential(BaseModel):
-    type: CredentialType = CredentialType.HEADERS
+class HeadersCredentialConfig(BaseModel):
+    type: Literal[CredentialType.HEADERS] = CredentialType.HEADERS
     headers: dict[str, str]
 
 
-class Service(BaseModel):
+class ServiceConfig(BaseModel):
     base_url: str
-    credential: BasicAuthCredential | BearerTokenCredential | HeadersCredential | None = (
+    credential: BasicAuthCredentialConfig | BearerTokenCredentialConfig | HeadersCredentialConfig | None = (
         None
     )
     valid_audiences: list[str] | None = None
     requires_service_token: bool | None = True
 
 
-class Config(BaseModel):
-    services: dict[str, Service]
+class AuditLogProviderType(str, enum.Enum):
+    LOCAL_DIR = "local_dir"
 
-    def get_service_config(self, service: str) -> Service | None:
+
+class LocalDirAuditLogConfig(BaseModel):
+    type: Literal[AuditLogProviderType.LOCAL_DIR] = AuditLogProviderType.LOCAL_DIR
+    root_dir: str
+
+
+class Config(BaseModel):
+    services: dict[str, ServiceConfig]
+    audit_log: LocalDirAuditLogConfig | None = None
+
+    def get_service_config(self, service: str) -> ServiceConfig | None:
         try:
             return self.services[service]
         except KeyError:

@@ -1,15 +1,19 @@
 import base64
 import dataclasses
+import os
+import shutil
 import unittest
+import uuid
 from typing import Any
 
 from lockbox.config import (
     Config,
-    Service,
+    ServiceConfig,
     CredentialType,
-    BasicAuthCredential,
-    BearerTokenCredential,
-    HeadersCredential,
+    BasicAuthCredentialConfig,
+    BearerTokenCredentialConfig,
+    HeadersCredentialConfig,
+    LocalDirAuditLogConfig,
 )
 from lockbox.generate_service_token import generate_service_token
 from tests.utils import LocalLockboxProxyServer, LocalBlackholeServer
@@ -36,19 +40,19 @@ def _get_blackhole_service_config(
     auth_type: CredentialType | None,
     requires_service_token: bool,
     valid_audiences: list[str] | None,
-) -> tuple[str, Service]:
+) -> tuple[str, ServiceConfig]:
     if auth_type is None:
         base_service_name = "blackhole_no_auth"
         credential = None
     elif auth_type == CredentialType.BASIC:
         base_service_name = "blackhole_with_basic_auth"
-        credential = BasicAuthCredential(username="user", password="pass")
+        credential = BasicAuthCredentialConfig(username="user", password="pass")
     elif auth_type == CredentialType.BEARER:
         base_service_name = "blackhole_with_bearer_auth"
-        credential = BearerTokenCredential(token="token")
+        credential = BearerTokenCredentialConfig(token="token")
     elif auth_type == CredentialType.HEADERS:
         base_service_name = "blackhole_with_headers_auth"
-        credential = HeadersCredential(headers={"X-Blackhole-API-Key": "api_key"})
+        credential = HeadersCredentialConfig(headers={"X-Blackhole-API-Key": "api_key"})
     else:
         raise NotImplementedError(f"Unsupported auth type: {auth_type}")
     if requires_service_token:
@@ -57,12 +61,15 @@ def _get_blackhole_service_config(
         service_name = base_service_name
     if valid_audiences is not None:
         service_name = f"{service_name}_with_valid_audiences_{len(valid_audiences)}"
-    return service_name, Service(
+    return service_name, ServiceConfig(
         base_url=f"http://localhost:{BLACKHOLE_SERVER_PORT}",
         credential=credential,
         requires_service_token=requires_service_token,
         valid_audiences=valid_audiences,
     )
+
+
+AUDIT_LOGS_DIR = f"/tmp/lockbox_audit_logs-{str(uuid.uuid4())}"
 
 
 class TestEverything(unittest.TestCase):
@@ -74,6 +81,11 @@ class TestEverything(unittest.TestCase):
 
     def tearDown(self):
         self.blackhole_server.stop()
+
+    @classmethod
+    def tearDownClass(cls):
+        if os.path.exists(AUDIT_LOGS_DIR):
+            shutil.rmtree(AUDIT_LOGS_DIR)
 
     def get_lockbox_proxy_server(self, config: Config, signing_key: str | None):
         return LocalLockboxProxyServer(config=config, signing_key=signing_key)
@@ -108,7 +120,10 @@ class TestEverything(unittest.TestCase):
                         raise ValueError(f"Duplicate service name: {service_name}")
                     lockbox_config_services[service_name] = service
 
-        lockbox_config = Config(services=lockbox_config_services)
+        lockbox_config = Config(
+            services=lockbox_config_services,
+            audit_log=LocalDirAuditLogConfig(root_dir=AUDIT_LOGS_DIR),
+        )
 
         test_cases = []
         for service_name, service in lockbox_config_services.items():

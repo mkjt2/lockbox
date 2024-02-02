@@ -10,7 +10,8 @@ Automation or workflow platforms like [Zapier](https://zapier.com) and [IFTTT](h
 * [IFTTT webhooks](https://ifttt.com/maker_webhooks)
 * [Zapier webhooks](https://zapier.com/apps/webhook/integrations)
 
-They require you to provide your third party API keys so they can act on your behalf. You are trusting them to keep your API keys safe, and that they do not misuse them.
+They require you to provide your third party API keys so they can act on your behalf. You are trusting them to keep your
+API keys safe, and that they do not misuse them.
 
 <img src="/assets/lockbox_before.png" />
 
@@ -28,7 +29,7 @@ Lockbox makes the call to the third party API, and returns the result to the wor
 ### Main benefits
 
 * Third party API keys are never exposed to the workflow platform
-* [Planned] You can audit all API calls made on your behalf
+* You can [audit](#auditing) all API calls made on your behalf
 * [Planned] You can restrict access to external APIs in a more fine grained manner
 * [Planned] Rate limit third party API calls
 
@@ -93,7 +94,8 @@ gunicorn lockbox.app:app --preload
 
 ## Accessing third-party APIs via Lockbox
 
-Example: Call to GitHub API to [list an organization's public repos.](https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-organization-repositories)
+Example: Call to GitHub API
+to [list an organization's public repos.](https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#list-organization-repositories)
 
 *Without Lockbox*, the request would have been `GET https://api.github.com/orgs/google/repos` for Google's repos.
 
@@ -160,6 +162,27 @@ To revoke ALL service tokens for a service, set `valid_audiences` to `[]`.
 Note `sample_config.json` updates are not automatically reloaded. You need to restart Lockbox server for changes to
 take.
 
+### Auditing
+
+Auditing can be enabled by setting `audit_log` in the config file.
+
+```json5
+{
+  "services": {
+    // ...
+  },
+  "audit_log": {
+    "type": "local_dir",
+    // Lockbox will try to create this directory if it does not exist
+    "root_dir": "/var/tmp/lockbox_audit_log"
+  }
+}
+```
+
+Events are logged in JSON format to the file path: `<root_dir>/service_name/YYYY-MM-DD/HH-MM-SS-<uuid>.json`.
+
+`<uuid>` ensures filename uniqueness for events logged within the same second.
+
 ## Design philosophy
 
 This is very much a prototype implementation to explore the concept of abstracting out third party API calls. E.g. Is it
@@ -180,6 +203,7 @@ We will consider other factors later, such as:
 
 ## Alternatives / Prior art
 
-* Nginx - battle testing web server, which can be configured to behave like Lockbox. Especially with various scripting options. E.g.
-  * [OpenResty / Nginx with Lua](https://openresty.org/)
-  * [Njs scripting](https://nginx.org/en/docs/njs/)
+* Nginx - battle testing web server, which can be configured to behave like Lockbox. Especially with various scripting
+  options. E.g.
+    * [OpenResty / Nginx with Lua](https://openresty.org/)
+    * [Njs scripting](https://nginx.org/en/docs/njs/)
