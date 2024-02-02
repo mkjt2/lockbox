@@ -177,3 +177,9 @@ We will consider other factors later, such as:
 * Performance (e.g. may be not Python?)
 * Flexibility
 * Deployment scripts / walkthroughs
+
+## Alternatives / Prior art
+
+* Nginx - battle testing web server, which can be configured to behave like Lockbox. Especially with various scripting options. E.g.
+  * [OpenResty / Nginx with Lua](https://openresty.org/)
+  * [Njs scripting](https://nginx.org/en/docs/njs/)

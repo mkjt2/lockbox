@@ -16,7 +16,6 @@ from lockbox.config import (
 )
 
 app = Flask(__name__)
-app.logger.level = logging.DEBUG
 
 config = load_config(os.environ["LOCKBOX_CONFIG_PATH"])
 
@@ -168,3 +167,10 @@ def service(service_name: str, subpath: str = ""):
         lockbox_response.headers[k] = v
     lockbox_response.status_code = response.status_code
     return lockbox_response
+
+
+# Credit: https://trstringer.com/logging-flask-gunicorn-the-manageable-way/
+if __name__ != "__main__":
+    gunicorn_logger = logging.getLogger("gunicorn.error")
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
