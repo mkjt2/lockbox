@@ -273,9 +273,16 @@ class TestEverything(unittest.TestCase):
                         blackhole_response.json(),
                     )
 
+                    # Timing issues - don't check "Date" header in response
+                    lockbox_response_headers = dict(lockbox_response.headers)
+                    blackhole_response_headers = dict(blackhole_response.headers)
+                    if "Date" in lockbox_response_headers:
+                        del lockbox_response_headers["Date"]
+                    if "Date" in blackhole_response_headers:
+                        del blackhole_response_headers["Date"]
+
                     self.assertEqual(
-                        dict(lockbox_response.headers),
-                        dict(blackhole_response.headers),
+                        lockbox_response_headers, blackhole_response_headers
                     )
 
 
