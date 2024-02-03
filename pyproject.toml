@@ -3,7 +3,7 @@ name = "lockbox-proxy"
 packages = [
     { include = "lockbox" }
 ]
-version = "0.1.2"
+version = "0.1.3"
 description = "Lockbox is a forward proxy for making third party API calls."
 authors = ["Jackie Tung <jackie.tung@gmail.com>"]
 readme = "README.md"
