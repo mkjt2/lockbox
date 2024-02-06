@@ -1,6 +1,7 @@
 import dataclasses
 import logging
 import os
+import sys
 import time
 import uuid
 from typing import Any
@@ -21,7 +22,22 @@ from lockbox.config import (
 
 app = Flask(__name__)
 
-config = load_config(os.environ["LOCKBOX_CONFIG_PATH"])
+# Setup logging ASAP
+# Credit: https://trstringer.com/logging-flask-gunicorn-the-manageable-way/
+if __name__ != "__main__":
+    gunicorn_logger = logging.getLogger("gunicorn.error")
+    app.logger.handlers = gunicorn_logger.handlers
+    app.logger.setLevel(gunicorn_logger.level)
+
+try:
+    config = load_config(os.environ["LOCKBOX_CONFIG_PATH"])
+except KeyError as ke:
+    app.logger.error(f"Please set LOCKBOX_CONFIG_PATH env var")
+    sys.exit(1)
+except Exception as e:
+    app.logger.error(f"Error loading config: {e}")
+    sys.exit(1)
+
 if config.audit_log:
     audit_log_provider = get_audit_log_provider(config.audit_log)
 else:
@@ -297,10 +313,3 @@ def service(service_name: str, subpath: str = ""):
             )
         )
     return lockbox_response
-
-
-# Credit: https://trstringer.com/logging-flask-gunicorn-the-manageable-way/
-if __name__ != "__main__":
-    gunicorn_logger = logging.getLogger("gunicorn.error")
-    app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)

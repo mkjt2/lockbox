@@ -1,0 +1,27 @@
+app = "lockbox-proxy-demo"
+primary_region = "sjc"
+
+[deploy]
+strategy = "immediate"
+
+[http_service]
+internal_port = 8000
+force_https = true
+auto_stop_machines = false
+auto_start_machines = true
+min_machines_running = 0
+processes = ["app"]
+
+[[http_service.checks]]
+grace_period = "5s"
+interval = "10s"
+method = "GET"
+timeout = "5s"
+path = "/healthz"
+
+[env]
+LOCKBOX_CONFIG_PATH = "/etc/lockbox/config.json"
+LOCKBOX_SIGNING_KEY_FILE = "/etc/lockbox/signing_key.txt"
+
+[experimental]
+exec = ["/bin/sh", "-c", ". venv/bin/activate && gunicorn lockbox.app:app --preload -b 0.0.0.0:8000 --log-level DEBUG"]
