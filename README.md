@@ -38,7 +38,7 @@ curl https://api.github.com/orgs/google/repos
 curl https://lockbox-proxy-demo.fly.dev/s/github_public/orgs/google/repos
 
 # Call to GitHub API (auth'd by Github API token) via Lockbox (auth'd by service token)
-export SERVICE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsb2NrYm94IiwiZXhwIjoxNzk3MjU4NDU2LCJzZXJ2aWNlX25hbWUiOiJnaXRodWJfcHVibGljX2JlaGluZF9zZXJ2aWNlX3Rva2VuIiwiYXVkIjoid2Fsa3Rocm91Z2gifQ.Y7covkNwF9OlAjv27J1iaBBJPWIPNBC1Tr6qVSzbVCk
+export SERVICE_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJsb2NrYm94IiwiZXhwIjoyNzA3Nzg4NjAyLCJzZXJ2aWNlX25hbWUiOiJnaXRodWJfcHJpdmF0ZV9iZWhpbmRfc2VydmljZV90b2tlbiIsImF1ZCI6ImxvY2tib3gtcHJveHktZGVtbyJ9.t3XNqQg-XkFeyziSb8xvVlCd7-TNac9hNScWuNX7dRo
 curl https://lockbox-proxy-demo.fly.dev/s/github_private_behind_service_token/orgs/google/repos -v -H "Authorization: Bearer $SERVICE_TOKEN"
 # - Curious about SERVICE_TOKEN?  Copy into https://jwt.io/ to decode it.
 # - Underlying Github API token is used by Lockbox, but not exposed to the client (curl).
