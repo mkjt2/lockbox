@@ -18,6 +18,13 @@
       "valid_audiences": [
         "zapier_webhook"
       ]
+    },
+    "long_running_service_example": {
+      "base_url": "https://api.example.com",
+      "requires_service_token": true,
+      "connect_timeout": 10,
+      "read_timeout": 300,
+      "allow_redirects": true
     }
   },
   "audit_log": {

@@ -19,6 +19,7 @@ from lockbox.config import (
     BearerTokenCredentialConfig,
     HeadersCredentialConfig,
 )
+from lockbox.utils import _safe_decode_text_data
 
 app = Flask(__name__)
 
@@ -98,7 +99,7 @@ def validate_service_token(
         )
         return ValidateServiceTokenResult(service_token_payload=service_token_payload)
     except Exception as e:
-        print(e)
+        app.logger.debug(f"JWT validation failed: {e}")
         return ValidateServiceTokenResult(
             error_message="Invalid service_name token (bad audience)",
             error_status_code=401,
@@ -151,21 +152,26 @@ def service(service_name: str, subpath: str = ""):
 
     _log_request()
     if audit_log_provider:
-        audit_log_provider.log_service_event(
-            event=_make_event(
-                event_name="request_to_lockbox",
-                payload={
-                    "request": {
-                        "method": request.method,
-                        "path": request.path,
-                        "args": request.args,
-                        "headers": dict(request.headers),
-                        "data": request.data.decode("utf-8"),
-                        "form": request.form,
-                    }
-                },
+        # Decode request data and check if it's valid UTF-8 text
+        decoded_data, is_text = _safe_decode_text_data(request.data)
+        if not is_text:
+            app.logger.warning(f"Skipping audit log for request with binary data - Service: {service_name}, Request ID: {request_id}")
+        else:
+            audit_log_provider.log_service_event(
+                event=_make_event(
+                    event_name="request_to_lockbox",
+                    payload={
+                        "request": {
+                            "method": request.method,
+                            "path": request.path,
+                            "args": request.args,
+                            "headers": dict(request.headers),
+                            "data": decoded_data,
+                            "form": request.form,
+                        }
+                    },
+                )
             )
-        )
 
     service_config = config.get_service_config(service_name)
     if service_config is None:
@@ -229,6 +235,11 @@ def service(service_name: str, subpath: str = ""):
     service_request_url = f"{service_config.base_url}/{subpath}"
 
     service_headers = {}
+    
+    # Build timeout tuple from config, or None if both are None
+    request_timeout = None
+    if service_config.connect_timeout is not None or service_config.read_timeout is not None:
+        request_timeout = (service_config.connect_timeout, service_config.read_timeout)
 
     requests_auth = None
     if service_config.credential:
@@ -259,6 +270,8 @@ def service(service_name: str, subpath: str = ""):
             params=request.args,
             data=request.form or request.data,
             auth=requests_auth,
+            timeout=request_timeout,
+            allow_redirects=service_config.allow_redirects,
         )
     elif request.method == "PUT":
         response = requests.put(
@@ -267,6 +280,8 @@ def service(service_name: str, subpath: str = ""):
             params=request.args,
             data=request.form or request.data,
             auth=requests_auth,
+            timeout=request_timeout,
+            allow_redirects=service_config.allow_redirects,
         )
     elif request.method == "POST":
         response = requests.post(
@@ -275,6 +290,8 @@ def service(service_name: str, subpath: str = ""):
             params=request.args,
             data=request.form or request.data,
             auth=requests_auth,
+            timeout=request_timeout,
+            allow_redirects=service_config.allow_redirects,
         )
     elif request.method == "DELETE":
         response = requests.delete(
@@ -283,6 +300,8 @@ def service(service_name: str, subpath: str = ""):
             params=request.args,
             data=request.form or request.data,
             auth=requests_auth,
+            timeout=request_timeout,
+            allow_redirects=service_config.allow_redirects,
         )
     else:
         event = _make_event(
@@ -295,9 +314,17 @@ def service(service_name: str, subpath: str = ""):
             audit_log_provider.log_service_event(event)
         return f"Unsupported method: {request.method}", 405
 
-    lockbox_response = make_response(response.text)
+    # Use response.content (bytes) to preserve binary data
+    lockbox_response = make_response(response.content)
+    
+    # Filter out hop-by-hop headers that shouldn't be forwarded
+    HOP_BY_HOP_HEADERS = {
+        'connection', 'keep-alive', 'proxy-authenticate', 
+        'proxy-authorization', 'te', 'trailer', 'transfer-encoding', 'upgrade'
+    }
     for k, v in response.headers.items():
-        lockbox_response.headers[k] = v
+        if k.lower() not in HOP_BY_HOP_HEADERS:
+            lockbox_response.headers[k] = v
     lockbox_response.status_code = response.status_code
     if audit_log_provider:
         audit_log_provider.log_service_event(

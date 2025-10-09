@@ -34,6 +34,12 @@ class ServiceConfig(BaseModel):
     )
     valid_audiences: list[str] | None = None
     requires_service_token: bool | None = True
+    # Connect timeout in seconds. None to disable. Default: 5
+    connect_timeout: float | None = 5
+    # Read timeout in seconds. None to disable. Default: 30
+    read_timeout: float | None = 30
+    # Whether to follow redirects. Default: False for security
+    allow_redirects: bool = False
 
 
 class AuditLogProviderType(str, enum.Enum):
