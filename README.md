@@ -49,6 +49,7 @@ curl https://lockbox-proxy-demo.fly.dev/s/github_private_behind_service_token/or
 
 * Third party API keys are never exposed to the workflow platform
 * You can [audit](#auditing) all API calls made on your behalf
+* Hot-reload configuration without downtime - update credentials, add/remove services, or revoke tokens instantly
 * [Planned] You can restrict access to external APIs in a more fine grained manner
 * [Planned] Rate limit third party API calls
 
@@ -76,17 +77,23 @@ May be call it `sample_config.json`. Example:
   "services": {
     // Access GitHub APIs that do not require auth
     "github_public": {
-      "base_url": "api.github.com",
+      "base_url": "api.github.com",  // Scheme defaults to https://
       "requires_service_token": false
     },
     // Access GitHub APIs that do not require auth - except Lockbox requires auth (by "service token')
     "github_public_behind_service_token": {
-      "base_url": "api.github.com",
+      "base_url": "https://api.github.com",  // Explicit scheme recommended
       "requires_service_token": true
     }
   }
 }
 ```
+
+**Note on `base_url`:**
+- URLs without a scheme (e.g., `api.github.com`) automatically default to `https://`
+- Explicit schemes are recommended for clarity: `https://api.github.com`
+- Using `http://` will work but generates a security warning
+- Trailing slashes are automatically stripped
 
 For reference, refer to [lockbox/config.py](https://github.com/mkjt2/lockbox/blob/main/lockbox/config.py).
 
@@ -178,8 +185,37 @@ In the example above, only service tokens with audience `walkthrough` is valid f
 
 To revoke ALL service tokens for a service, set `valid_audiences` to `[]`.
 
-Note `sample_config.json` updates are not automatically reloaded. You need to restart Lockbox server for changes to
-take.
+### Reloading configuration without restart
+
+Configuration changes can be applied without restarting the Lockbox server using the reload endpoint.
+
+#### Generate an admin token
+
+```bash
+export ADMIN_TOKEN=$(python -m lockbox.generate_admin_token \
+    --signing-key-file signing_key.txt \
+    --duration 3600
+    )
+```
+
+Admin tokens use the same signing key as service tokens but include an `admin: true` claim.
+
+#### Reload configuration
+
+After updating your `sample_config.json`, reload the configuration:
+
+```bash
+curl -X POST localhost:8000/admin/reload \
+    -H "Authorization: Bearer $ADMIN_TOKEN"
+```
+
+This will:
+- Reload all service configurations
+- Apply changes to service credentials, timeouts, and access controls
+- Update audit log settings
+- Return immediately without dropping existing connections
+
+**Note:** The reload is atomic - either all changes apply successfully or none do. If the new config file has errors, the old config remains active.
 
 ### Auditing
 
