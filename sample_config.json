@@ -2,7 +2,8 @@
   "services": {
     "github_public": {
       "base_url": "https://api.github.com",
-      "requires_service_token": false
+      "requires_service_token": false,
+      "_comment": "base_url can be 'api.github.com' (defaults to https) or explicit 'https://api.github.com'"
     },
     "github_public_behind_service_token": {
       "base_url": "https://api.github.com",
@@ -15,9 +16,14 @@
         "token": "YOUR_GITHUB_API_TOKEN"
       },
       "requires_service_token": true,
-      "valid_audiences": [
-        "zapier_webhook"
-      ]
+      "valid_audiences": ["zapier_webhook"]
+    },
+    "long_running_service_example": {
+      "base_url": "https://api.example.com",
+      "requires_service_token": true,
+      "connect_timeout": 10,
+      "read_timeout": 300,
+      "allow_redirects": true
     }
   },
   "audit_log": {

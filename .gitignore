@@ -1,2 +1,38 @@
 .idea
 **/__pycache__
+
+# Secrets and credentials
+signing_key*.txt
+*secret*.json
+*secrets*.json
+.env
+.env.*
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.cer
+*.crt
+
+# Local config overrides
+config.json
+local_config.json
+
+# Audit logs
+lockbox_audit_log/
+
+# Python
+*.pyc
+*.pyo
+*.egg-info
+.pytest_cache/
+dist/
+build/
+
+# IDE
+.vscode/
+*.swp
+*.swo
+*~

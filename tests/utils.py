@@ -19,14 +19,11 @@ class LocalServer(AbstractContextManager):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.stop()
 
-    def start(self) -> None:
-        ...
+    def start(self) -> None: ...
 
-    def stop(self) -> None:
-        ...
+    def stop(self) -> None: ...
 
-    def is_healthy(self) -> bool:
-        ...
+    def is_healthy(self) -> bool: ...
 
 
 class LocalGunicornServer(LocalServer):
@@ -85,33 +82,62 @@ class LocalBlackholeServer(LocalGunicornServer):
 
 
 class LocalLockboxProxyServer(LocalGunicornServer):
-    def __init__(self, config: Config, signing_key: str | None, port: int = 8000):
+    def __init__(
+        self,
+        config: Config | None = None,
+        signing_key: str | None = None,
+        port: int = 8000,
+        config_file: str | None = None,
+    ):
+        """Initialize LocalLockboxProxyServer.
+
+        Args:
+            config: Config object to use (creates temp file). Mutually exclusive with config_file.
+            signing_key: Signing key string (creates temp file if provided)
+            port: Port to run server on
+            config_file: Path to existing config file to use. Mutually exclusive with config.
+        """
         super().__init__(port)
-        self._lockbox_config: Config = config
-        self._lockbox_config_file: str | None = None
+        if config is not None and config_file is not None:
+            raise ValueError("Cannot specify both config and config_file")
+        if config is None and config_file is None:
+            raise ValueError("Must specify either config or config_file")
+
+        self._lockbox_config: Config | None = config
+        self._lockbox_config_file_external: str | None = config_file
+        self._lockbox_config_file_temp: str | None = None
         self._lockbox_signing_key: str | None = signing_key
         self._lockbox_signing_key_file: str | None = None
 
     def start(self) -> None:
-        self._lockbox_config_file = tempfile.mktemp()
-        with open(self._lockbox_config_file, "w") as f:
-            f.write(self._lockbox_config.model_dump_json())
         env = os.environ.copy()
-        env["LOCKBOX_CONFIG_PATH"] = self._lockbox_config_file
 
+        # Set up config file
+        if self._lockbox_config_file_external:
+            # Use external config file
+            env["LOCKBOX_CONFIG_PATH"] = self._lockbox_config_file_external
+        else:
+            # Create temp config file from Config object
+            self._lockbox_config_file_temp = tempfile.mktemp()
+            with open(self._lockbox_config_file_temp, "w") as f:
+                f.write(self._lockbox_config.model_dump_json())
+            env["LOCKBOX_CONFIG_PATH"] = self._lockbox_config_file_temp
+
+        # Set up signing key file
         if self._lockbox_signing_key is not None:
             self._lockbox_signing_key_file = tempfile.mktemp()
             with open(self._lockbox_signing_key_file, "w") as f:
                 f.write(self._lockbox_signing_key)
             env["LOCKBOX_SIGNING_KEY_FILE"] = self._lockbox_signing_key_file
+
         self._start_gunicorn("lockbox.app:app", env)
 
     def stop(self) -> None:
         self._stop_gunicorn()
-        if self._lockbox_config_file is not None:
-            if os.path.exists(self._lockbox_config_file):
-                os.remove(self._lockbox_config_file)
-            self._lockbox_config_file = None
+        if self._lockbox_config_file_temp is not None:
+            if os.path.exists(self._lockbox_config_file_temp):
+                os.remove(self._lockbox_config_file_temp)
+            self._lockbox_config_file_temp = None
         if self._lockbox_signing_key_file is not None:
             if os.path.exists(self._lockbox_signing_key_file):
                 os.remove(self._lockbox_signing_key_file)
