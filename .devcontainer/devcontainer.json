@@ -1,0 +1,41 @@
+{
+  "name": "Lockbox Development",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "args": {
+      "USERNAME": "devuser",
+      "USER_UID": "1000",
+      "USER_GID": "1000"
+    }
+  },
+  "remoteUser": "devuser",
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+
+  // Port forwarding for Lockbox server
+  "forwardPorts": [8000],
+  "portsAttributes": {
+    "8000": {
+      "label": "Lockbox Server",
+      "onAutoForward": "notify"
+    }
+  },
+
+  // Run setup script after container creation
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+
+  // Mount git credentials
+  "mounts": [
+    "source=${localEnv:HOME}/.gitconfig,target=/home/devuser/.gitconfig,type=bind,consistency=cached"
+  ],
+
+  // Features
+  "features": {},
+
+  // Environment variables
+  "remoteEnv": {
+    "PATH": "/home/devuser/.local/bin:${containerEnv:PATH}",
+    "TERM": "xterm-256color",
+    "LESS": "-R"
+  }
+}

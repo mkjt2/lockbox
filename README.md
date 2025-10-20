@@ -26,6 +26,41 @@ Lockbox makes the call to the third party API, and returns the result to the wor
 
 <img src="/assets/lockbox_after.png" />
 
+## Development Environment
+
+### Using DevContainer / DevPod
+
+This project includes a devcontainer configuration for consistent development environments. You can use it with:
+
+- [DevPod](https://devpod.sh/) - Open source dev environment manager
+- [GitHub Codespaces](https://github.com/features/codespaces)
+- Any tool that supports the [devcontainer standard](https://containers.dev/)
+
+#### Quick Start with DevPod
+
+```bash
+# Install DevPod (macOS)
+brew install devpod
+
+# Open this repository in a DevPod
+devpod up .
+
+# SSH into the environment
+devpod ssh .
+```
+
+The devcontainer includes:
+- Python 3.11
+- Poetry for dependency management
+- Git and GitHub CLI
+- Vim for editing
+- All project dependencies pre-installed
+
+After the container starts, you'll have a fully configured environment with:
+- Dependencies installed via Poetry
+- Pre-commit hooks set up
+- Sample `signing_key.txt` generated for development
+
 ### Live demo
 Proxy requests to Github API.
 
